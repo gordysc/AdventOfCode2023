@@ -5,29 +5,32 @@ var sw = new System.Diagnostics.Stopwatch();
 sw.Start();
 
 var lines = File.ReadAllLines(@"../../../Input/File1.txt");
-var total = 0;
+
+var tickets = Enumerable.Repeat(1, lines.Length).ToArray();
 
 var evaluator = new Evaluator();
 
-foreach (var line in lines)
+for (var loop = 0; loop < lines.Length; loop++)
 {
-    var count = evaluator.FindCount(line);
-    total += evaluator.Calculate(count);
+    var matches = evaluator.Evaluate(lines[loop]);
+
+    if (matches == 0) continue;
+
+    for (var iter = 0; iter < matches; iter++)
+    {
+        if (loop + iter + 1 >= lines.Length) break;
+        tickets[loop + iter + 1] += tickets[loop];
+    }
 }
 
 sw.Stop();
 
-Console.WriteLine($"Total: {total}");
+Console.WriteLine($"Total: {tickets.Sum()}");
 Console.WriteLine($"Total Time: {sw.Elapsed.TotalMilliseconds}ms");
 
 internal sealed class Evaluator
 {
-    public int Calculate(int total)
-    {
-        return total < 2 ? total : (int) Math.Pow(2, total - 1);
-    }
-    
-    public int FindCount(string line)
+    public int Evaluate(string line)
     {
         var values = line.Split(":")[1].Split("|");
         var count = 0;
