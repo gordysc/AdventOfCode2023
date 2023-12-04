@@ -5,9 +5,7 @@ var sw = new System.Diagnostics.Stopwatch();
 sw.Start();
 
 var lines = File.ReadAllLines(@"../../../Input/File1.txt");
-
 var tickets = Enumerable.Repeat(1, lines.Length).ToArray();
-
 var evaluator = new Evaluator();
 
 for (var loop = 0; loop < lines.Length; loop++)
@@ -33,26 +31,17 @@ internal sealed class Evaluator
     public int Evaluate(string line)
     {
         var values = line.Split(":")[1].Split("|");
-        var count = 0;
         
         var winning = ParseNumbers(values[0]);
         var numbers = ParseNumbers(values[1]);
 
-        foreach (var value in numbers)
-        {
-            if (!winning.Contains(value))
-                continue;
-
-            count++;
-        }
-
-        return count;
+        return winning.Intersect(numbers).Count();
     }
 
-    private int[] ParseNumbers(string values)
+    private IEnumerable<int> ParseNumbers(string values)
     {
         var sanitized = Regex.Replace(values.Trim(), @"\s+", " ");
-        
-        return sanitized.Split(" ").Select(s => int.Parse(s)).ToArray();
+
+        return sanitized.Split(" ").Select(int.Parse);
     }
 }
