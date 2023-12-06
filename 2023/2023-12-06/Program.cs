@@ -3,9 +3,9 @@
 using System.Text.RegularExpressions;
 
 var sw = new System.Diagnostics.Stopwatch();
-sw.Start();
+var lines = File.ReadAllLines(@"../../../Input/File1.txt");
 
-var lines = File.ReadAllLines(@"../../../Input/File1 .txt");
+sw.Start();
 
 var evaluator = new Evaluator(lines);
 var result = evaluator.Evaluate();
@@ -14,40 +14,31 @@ sw.Stop();
 
 Console.WriteLine($"Result: {result}");
 Console.WriteLine($"Total Time: {sw.Elapsed.TotalMilliseconds}ms");
+
 internal record Evaluator(string[] lines)
 {
-    public int Evaluate()
+    public long Evaluate()
     {
-        var times = ParseLine(lines[0]);
-        var distances = ParseLine(lines[1]);
-        var combinations = new int[times.Length];
-
-        for (var loop = 0; loop < times.Length; loop++)
-            combinations[loop] = EvaluateRace(times[loop], distances[loop]);
-
-        return combinations.Aggregate(1, (a, b) => a * b);
+        var time = ParseLine(lines[0]);
+        var distance = ParseLine(lines[1]) + 1;
+        
+        return EvaluateRace(time, distance);
     }
     
-    private int EvaluateRace(int time, int distance)
+    private long EvaluateRace(long time, long distance)
     {
-        var combinations = 0;
-        
-        for (var loop = 0; loop < time; loop++)
-        {
-            var speed = loop;
-            var result = speed * (time - loop);
+        var value = Math.Sqrt(Math.Pow(time, 2) - 4 * distance);
 
-            if (result > distance)
-                combinations++;
-        }
+        var max = (long) Math.Floor((time + value) / 2);
+        var min = (long) Math.Ceiling((time - value) / 2);
 
-        return combinations;
+        return max - min + 1;
     }
 
-    private int[] ParseLine(string values)
+    private long ParseLine(string line)
     {
-        var sanitized = Regex.Replace(values.Trim(), @"\s+", " ");
-
-        return sanitized.Split(":")[1].Trim().Split(" ").Select(int.Parse).ToArray();
+        var values = line.Split(":")[1].Trim();
+        
+        return long.Parse(Regex.Replace(values, @"\s+", ""));
     }
 }
