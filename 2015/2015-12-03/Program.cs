@@ -34,7 +34,7 @@ internal class Evaluator
         return _points.Count();
     }
 
-    public (int, int) Move((int, int) cursor, char c)
+    private static (int, int) Move((int, int) cursor, char c)
     {
         var x = cursor.Item1 + c switch { '>' => 1, '<' => -1, _ => 0 };
         var y = cursor.Item2 + c switch { '^' => 1, 'v' => -1, _ => 0 };
