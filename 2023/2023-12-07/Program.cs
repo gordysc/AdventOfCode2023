@@ -29,7 +29,7 @@ Console.WriteLine($"Total Time: {sw.Elapsed.TotalMilliseconds}ms");
 
 class Comparer : IComparer<Hand>
 {
-    private static readonly char[] Cards = new[] { '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A' };
+    private static readonly char[] Cards = new[] { 'J', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'Q', 'K', 'A' };
     private static readonly IDictionary<char, int> CardStrength = Cards.ToDictionary(c => c, c => Array.IndexOf(Cards, c) + 2);
     
     public int Compare(Hand A, Hand B)
@@ -51,7 +51,18 @@ class Comparer : IComparer<Hand>
 
 record Hand(string Cards, int Bid)
 {
-    public int Strength => Counts switch {
+    public int Strength => RawStrength switch
+    {
+        var x and (7 or 5) => x,
+        var x when Jokers == 0 => x,
+        6 => 7,
+        4 => 4 + Jokers + 1,
+        3 => 5,
+        2 => Jokers switch { 1 => 4, 2 => 6, _ => 7},
+        _ => Jokers switch { 1 => 2, 2 => 4, 3 => 6, _ => 7 }
+    };
+    
+    private int RawStrength => Counts switch {
         var x when x.Any(c => c.Item2 == 5) => 7,
         var x when x.Any(c => c.Item2 == 4) => 6,
         var x when x.Any(c => c.Item2 == 3) && x.Any(c => c.Item2 == 2) => 5,
@@ -61,5 +72,6 @@ record Hand(string Cards, int Bid)
         _ => 1
     };
 
-    private (char, int)[] Counts => Cards.Distinct().Select(c => (c, Cards.Count(x => x == c))).ToArray();
+    private (char, int)[] Counts => Cards.Distinct().Where(c => c != 'J').Select(c => (c, Cards.Count(x => x == c))).ToArray();
+    private int Jokers => Cards.Count(x => x == 'J');
 };
