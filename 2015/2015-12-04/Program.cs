@@ -13,7 +13,7 @@ do
     var hash = MD5.HashData(Encoding.ASCII.GetBytes($"{text}{loop}"));
     var hex = BitConverter.ToString(hash).Replace("-", "");
 
-    if (hex.StartsWith("00000"))
+    if (hex.StartsWith("000000"))
         break;
 
     loop++;
