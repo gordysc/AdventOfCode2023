@@ -14,20 +14,31 @@ Console.WriteLine($"Total Time: {sw.Elapsed.TotalMilliseconds}ms");
 
 internal class Evaluator
 {
+    private readonly HashSet<(int, int)> _points = [(0, 0)];
     public int Evaluate(string text)
     {
-        var cursor = (0, 0);
-        var points = new HashSet<(int, int)> { (0, 0) };
+        var santa = (0, 0);
+        var robot = (0, 0);
 
-        foreach (char c in text)
+        foreach (var values in text.Chunk(2).ToArray())
         {
-            var x = cursor.Item1 + c switch { '>' => 1, '<' => -1, _ => 0 };
-            var y = cursor.Item2 + c switch { '^' => 1, 'v' => -1, _ => 0 };
+            var c = values[0];
+            
+            santa = Move(santa, c);
+            robot = values.Length == 2 ? Move(robot, values[1]) : robot;
 
-            points.Add((x, y));
-            cursor = (x, y);
+            _points.Add(santa);
+            _points.Add(robot);
         }
 
-        return points.Count();
+        return _points.Count();
+    }
+
+    public (int, int) Move((int, int) cursor, char c)
+    {
+        var x = cursor.Item1 + c switch { '>' => 1, '<' => -1, _ => 0 };
+        var y = cursor.Item2 + c switch { '^' => 1, 'v' => -1, _ => 0 };
+        
+        return (x, y);
     }
 }
