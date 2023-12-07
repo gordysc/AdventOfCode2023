@@ -2,15 +2,22 @@
 
 sw.Start();
 
-var floor = 0;
 var text = File.ReadAllText(@"../../../Input.txt");
 
-foreach (char c in text)
-    floor += c == '(' ? 1 : -1;
+var floor = 0;
+var position = 0;
+
+for (var loop = 0; loop < text.Length; loop++)
+{
+    floor += text[loop] == '(' ? 1 : -1;
+    position++;
+
+    if (floor < 0) break;
+}
 
 Console.WriteLine(text);
 
 sw.Stop();
 
-Console.WriteLine($"Floor: {floor}");
+Console.WriteLine($"Position: {position}");
 Console.WriteLine($"Total Time: {sw.Elapsed.TotalMilliseconds}ms");
