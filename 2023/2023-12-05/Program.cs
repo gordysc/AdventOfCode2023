@@ -1,97 +1,93 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
-using System.Collections.Concurrent;
-
 var sw = new System.Diagnostics.Stopwatch();
 
 sw.Start();
 
 var lines = File.ReadAllLines(@"../../../Input/File1.txt");
-var mappers = AdventUtils.CreateMappers(lines);
-var seeds = AdventUtils.CreateSeeds(lines[0]);
-var results = new long[seeds.Length];
 
-Parallel.ForEach(seeds, (seed, state, index) =>
-{
-    results[index] = seed;
-    foreach (var mapper in mappers)
-        results[index] = mapper.Map(results[index]);
-});
+var inputs = lines[0].Split(":")[1].Trim().Split(" ").Select(long.Parse).ToArray();
+var seeds = inputs.Chunk(2).Select(v => new SeedRange(v[0], v[1])).ToArray();
 
-var closest = results.Min();
+var evaluator = new Evaluator();
+
+var groups = evaluator.CreateGroups(lines[3..]);
+var closest = evaluator.Evaluate(seeds, groups);
 
 sw.Stop();
 
 Console.WriteLine($"Closest: {closest}");
 Console.WriteLine($"Total Time: {sw.Elapsed.TotalMilliseconds}ms");
 
-internal class AdventUtils
+internal class Evaluator
 {
-    public static long[] CreateSeeds(string line)
+    
+    public SeedMapper[][] CreateGroups(string[] lines)
     {
-        var entries = line.Split(":")[1].Trim().Split(" ").Select(long.Parse).ToArray();
-        var pairs = entries.Length / 2;
-        var seeds = new List<long>();
+        var groups = new List<SeedMapper[]>();
+        var mappers = new List<SeedMapper>();
 
-        for (var loop = 0; loop < pairs; loop++)
+        foreach (var line in lines)
         {
-            var start = entries[loop * 2];
-            var length = entries[loop * 2 + 1];
-
-            for (var iter = 0; iter < length; iter++)
-                seeds.Add(start + iter);
-        }
-
-        return seeds.ToArray();
-    }
-
-    public static List<Mapper> CreateMappers(string[] lines)
-    {
-        var mappers = new List<Mapper>();
-        var mapper = new Mapper();
-
-        for (var loop = 3; loop < lines.Length; loop++)
-        {
-            var line = lines[loop];
-
-            if (string.IsNullOrEmpty(line))
+            if (string.IsNullOrWhiteSpace(line))
                 continue;
-
+            
             if (line.Contains("map"))
             {
-                mappers.Add(mapper);
-                mapper = new Mapper();
+                groups.Add(mappers.ToArray());
+                mappers.Clear();
                 continue;
             }
 
-            mapper.AddMap(line);
+            var values = line.Split(" ").Select(long.Parse).ToArray();
+            
+            var destination = values[0];
+            var source = new SeedRange(values[1], values[2]);
+            
+            mappers.Add(new SeedMapper(destination, source));
+        }
+        
+        if (mappers.Any()) groups.Add(mappers.ToArray());
+
+        return groups.ToArray();
+    }
+
+    public long Evaluate(SeedRange[] seeds, SeedMapper[][] groups)
+    {
+        var results = seeds.ToList();
+        var mapped = new List<SeedRange>();
+        
+        foreach (var group in groups)
+        {
+            foreach (var result in results)
+                foreach (var mapper in group)
+                    if (mapper.Overlaps(result))
+                        mapped.Add(mapper.Map(result));
+
+            results = mapped;
+            mapped = new List<SeedRange>();
         }
 
-        mappers.Add(mapper);
-
-        return mappers;
+        return results.Select(r => r.Start).Min();
     }
 }
 
-internal class Mapper
+internal record SeedRange(long Start, long Range)
 {
-    private readonly List<SeedMap> _maps = new ();
-
-    public void AddMap(string line)
-    {
-        var values = line.Trim().Split(" ").Select(long.Parse).ToArray();
-        var map = new SeedMap(values[0], values[1], values[2]);
-
-        _maps.Add(map);
-    }
-
-    public long Map(long source)
-    {
-        foreach (var map in _maps)
-            if (source >= map.Start && source < map.Start + map.Range)
-                return map.Destination + (source - map.Start);
-
-        return source;
-    }
+    public long End => Start + Range - 1;
 }
-internal record SeedMap(long Destination, long Start, long Range);
+
+internal record SeedMapper(long Destination, SeedRange Source)
+{
+    public SeedRange Map(SeedRange input)
+    {
+        var start = Math.Max(input.Start, Source.Start);
+        var end = Math.Min(input.End, Source.End);
+
+        var offset = start - Source.Start;
+        var range = end - start + 1;
+        
+        return new SeedRange(Destination + offset, range);
+    }   
+    public bool Overlaps(SeedRange input) => Source.Start <= input.End && input.Start <= Source.End;
+}
