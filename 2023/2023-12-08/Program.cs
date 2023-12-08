@@ -38,12 +38,12 @@ internal class Evaluator
     private IDictionary<string, (string, string)> BuildMap(string[] lines) =>
         lines.Select(ParseLine).ToDictionary(parts => parts[0], parts => (parts[1], parts[2]));
 
-    private static readonly char[] Separator = new[] { '=', '(', ')', ',', ' ' };
+    private static readonly char[] Separator = { '=', '(', ')', ',', ' ' };
     private static string[] ParseLine(string line) => 
         line.Split(Separator, StringSplitOptions.RemoveEmptyEntries);
 }
 
-internal class Runner(IDictionary<string, (string, string)> map, string[] instructions)
+internal class Runner(IDictionary<string, (string, string)> map, IEnumerable<string> instructions)
 {
     public long Run(string source)
     {
