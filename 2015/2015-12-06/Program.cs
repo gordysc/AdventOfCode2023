@@ -17,7 +17,7 @@ Console.WriteLine($"Total Time: {sw.Elapsed.TotalMilliseconds}ms");
 
 internal class Grid
 {
-    private readonly byte[,] grid = new byte[1000, 1000];
+    private readonly int[,] grid = new int[1000, 1000];
     public int count = 0;
 
     public void Execute(string line)
@@ -47,9 +47,9 @@ internal class Grid
     
     private Instruction ParseInstruction(string line) => line switch
     {
-        var s when s.StartsWith("turn on", StringComparison.OrdinalIgnoreCase) => Instruction.TurnOn,
-        var s when s.StartsWith("turn off", StringComparison.OrdinalIgnoreCase) => Instruction.TurnOff,
-        var s when s.StartsWith("toggle", StringComparison.OrdinalIgnoreCase) => Instruction.Toggle,
+        _ when line.StartsWith("turn on", StringComparison.OrdinalIgnoreCase) => Instruction.TurnOn,
+        _ when line.StartsWith("turn off", StringComparison.OrdinalIgnoreCase) => Instruction.TurnOff,
+        _ when line.StartsWith("toggle", StringComparison.OrdinalIgnoreCase) => Instruction.Toggle,
         _ => throw new Exception("Invalid instruction")
     };
     
@@ -58,8 +58,8 @@ internal class Grid
         for (var x = a.X; x <= b.X; x++)
         for (var y = a.Y; y <= b.Y; y++)
         {
-            if (grid[x, y] == 0) count++;
-            grid[x, y] = 1;
+            count++;
+            grid[x, y] += 1;
         }
     }
     
@@ -68,8 +68,9 @@ internal class Grid
         for (var x = a.X; x <= b.X; x++)
         for (var y = a.Y; y <= b.Y; y++)
         {
-            if (grid[x, y] == 1) count--;
-            grid[x, y] = 0;
+            if (grid[x, y] == 0) continue;
+            count--;
+            grid[x, y] -= 1;
         }
     }
     
@@ -78,10 +79,9 @@ internal class Grid
         for (var x = a.X; x <= b.X; x++)
         for (var y = a.Y; y <= b.Y; y++)
         {
-            if (grid[x, y] == 0) count++;
-            else count--;
-            
-            grid[x, y] = (byte) (grid[x, y] == 0 ? 1 : 0);
+            count +=2;
+
+            grid[x, y] += 2;
         }
     }
 }
