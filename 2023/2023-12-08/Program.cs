@@ -12,21 +12,28 @@ sw.Stop();
 Console.WriteLine($"Total Steps: {total}");
 Console.WriteLine($"Elapsed time: {sw.Elapsed.TotalMilliseconds} ms");
 
-internal class Evaluator(bool found = false)
+internal class Evaluator
 {
-    public int Evaluate(string[] lines)
+    public long Evaluate(string[] lines)
     {
         var instructions = lines[0].Select(c => c.ToString()).ToArray();
         var map = BuildMap(lines[2..]);
 
-        var runner = new Runner(map);
-        var visitor = new Visitor("AAA");
+        var runner = new Runner(map, instructions);
+        
+        var sources = map.Keys.Where(v => v.EndsWith("A")).ToArray();
+        var results = sources.Select(s => runner.Run(s)).ToArray();
 
-        while (!visitor.Found)
-            runner.Run(instructions, visitor);   
+        var lcm = results[0];
+        
+        for (var i = 1; i < results.Length; i++)
+            lcm = LCM(lcm, results[i]);
 
-        return visitor.Steps;
+        return lcm;
     }
+
+    private static long LCM(long a, long b) => a * b / GCD(a, b);
+    private static long GCD(long a, long b) => b == 0 ? a : GCD(b, a % b);
 
     private IDictionary<string, (string, string)> BuildMap(string[] lines) =>
         lines.Select(ParseLine).ToDictionary(parts => parts[0], parts => (parts[1], parts[2]));
@@ -36,24 +43,29 @@ internal class Evaluator(bool found = false)
         line.Split(Separator, StringSplitOptions.RemoveEmptyEntries);
 }
 
-internal class Runner(IDictionary<string, (string, string)> map)
+internal class Runner(IDictionary<string, (string, string)> map, string[] instructions)
 {
-    public void Run(string[] instructions, Visitor visitor)
+    public long Run(string source)
     {
-        foreach (var instruction in instructions)
-        {
-            visitor.IncrementSteps();
-            visitor.Cursor = instruction == "L" ? map[visitor.Cursor].Item1 : map[visitor.Cursor].Item2;
+        var visitor = new Visitor(source);
+        var steps = 0L;
 
-            if (visitor.Found) break;
-        }
+        while (!visitor.Found)
+            foreach (var instruction in instructions)
+            {
+                visitor.Cursor = instruction == "L" ? map[visitor.Cursor].Item1 : map[visitor.Cursor].Item2;
+                
+                steps++;
+                
+                if (visitor.Found) break;
+            }
+        
+        return steps;
     }
 }
 
 internal class Visitor(string cursor)
 {
     public string Cursor { get; set; } = cursor;
-    public int Steps { get; private set; }
-    public bool Found => Cursor == "ZZZ";
-    public void IncrementSteps() => Steps++;
+    public bool Found => Cursor.EndsWith("Z");
 }
