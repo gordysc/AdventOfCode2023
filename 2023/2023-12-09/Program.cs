@@ -16,7 +16,7 @@ Console.WriteLine($"Total Time: {sw.Elapsed.TotalMilliseconds}ms");
 internal class Evaluator
 {
     public int Evaluate(string line) => 
-        Calculate(line.Split(" ").Select(int.Parse).ToArray());
+        Calculate(line.Split(" ").Select(int.Parse).Reverse().ToArray());
 
     private static int Calculate(IReadOnlyList<int> values)
     {
