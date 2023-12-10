@@ -20,7 +20,6 @@ internal class Evaluator
 
     private static int Calculate(IReadOnlyList<int> values)
     {
-        Console.WriteLine(string.Join(" ", values));
         var sequence = new int[values.Count - 1];
 
         for (var loop = 1; loop < values.Count; loop++)
