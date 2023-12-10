@@ -27,28 +27,61 @@ Console.WriteLine($"Total time: {sw.Elapsed.TotalMilliseconds} ms");
 
 internal class Evaluator(char[][] Map)
 {
-    public int Evaluate((int, int) start)
+    public int Evaluate((int, int) position)
     {
-        var visited = new Dictionary<(int, int), bool>();
-        var nodes = new HashSet<Node>();
-        var queue = new Queue<Node>();
-
-        queue.Enqueue(new Node(start, 'S', 0));
+        var route = BuildRoute(position);
+        var vertices = FindVertices(route);
         
-        while (queue.Count > 0)
-        {
-            var node = queue.Dequeue();
-            var position = node.Position;
-            
-            if (!visited.TryAdd(position, true)) continue;
+        // Check if starting node is a vertex
+        var start = new Node(position, 'S');
+        var neighbors = GetNeighbors(start);
+        if (neighbors.Any(n => "7LFJ".Contains(n.Value))) vertices.Add(start);
+        
+        // Shoelace Theorem (finds area of polygon)
+        // https://en.wikipedia.org/wiki/Shoelace_formula
+        var area = CalculateArea(vertices.ToArray());
+        
+        // Pick's Theorem (Area = I + B/2 - 1)
+        // https://en.wikipedia.org/wiki/Pick%27s_theorem
+        return area + 1 - (route.Length / 2);
+    }
+    
+    private int CalculateArea(Node[] vertices) {
+        var mod = vertices.Length;
 
-            nodes.Add(node);
-            
-            foreach(var neighbor in GetNeighbors(node))
-                queue.Enqueue(neighbor);
+        var area = 0;
+
+        for (var loop = 0; loop < vertices.Length; loop++) {
+            var (x1, y1) = vertices[loop].Position;
+            var (x2, y2) = vertices[(loop + 1) % mod].Position;
+
+            area += x1 * y2 - y1 * x2;
         }
 
-        return nodes.Max(n => n.Distance);
+        return area / 2;
+    }
+
+    private List<Node> FindVertices(Node[] nodes) => 
+        nodes.Where(n => n.Value != '-' && n.Value != '|').ToList();
+
+    private Node[] BuildRoute((int, int) position)
+    {
+        var start = new Node(position, 'S');
+
+        var visited = new HashSet<Node>();
+        var nodes = new List<Node> { start };
+
+        var node = GetNeighbors(start).First();
+
+        while (node is not null)
+        {
+            visited.Add(node);
+            nodes.Add(node);
+            
+            node = GetNeighbors(node).FirstOrDefault(n => !visited.Contains(n));
+        }
+
+        return nodes.ToArray();
     }
     
     private Node[] GetNeighbors(Node node)
@@ -59,22 +92,22 @@ internal class Evaluator(char[][] Map)
         var neighbors = new List<Node>();
         
         if (row > 0 && validator.IsValidTop(Map[row - 1][col]))
-            neighbors.Add(new Node((row - 1, col), Map[row - 1][col], node.Distance + 1));
+            neighbors.Add(new Node((row - 1, col), Map[row - 1][col]));
         
         if (row + 1 <= Map.Length -1 && validator.IsValidBottom(Map[row + 1][col]))
-            neighbors.Add(new Node((row + 1, col), Map[row + 1][col], node.Distance + 1));
+            neighbors.Add(new Node((row + 1, col), Map[row + 1][col]));
         
         if (col > 0 && validator.IsValidLeft(Map[row][col - 1]))
-            neighbors.Add(new Node((row, col - 1), Map[row][col - 1], node.Distance + 1));
+            neighbors.Add(new Node((row, col - 1), Map[row][col - 1]));
         
         if (col + 1 <= Map[row].Length - 1 && validator.IsValidRight(Map[row][col + 1]))
-            neighbors.Add(new Node((row, col + 1), Map[row][col + 1], node.Distance + 1));
+            neighbors.Add(new Node((row, col + 1), Map[row][col + 1]));
         
         return neighbors.ToArray();
     }
 }
 
-internal record Node((int, int) Position, char Value, int Distance);
+internal record Node((int, int) Position, char Value);
 internal record PipeValidator(char Value)
 {
     public bool IsValidLeft(char left) =>
