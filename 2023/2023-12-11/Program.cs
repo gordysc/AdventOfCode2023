@@ -15,28 +15,40 @@ Console.WriteLine($"Total time: {sw.Elapsed.TotalMilliseconds} ms");
 
 internal class Evaluator()
 {
-    public int Evaluate(string[] lines)
+    public long Evaluate(string[] lines)
     {
-        var grid = BuildGrid(lines);
+        var grid = lines.Select(line => line.ToCharArray()).ToArray();
         var galaxies = FindGalaxies(grid);
-        var distances = new List<int>();
+        
+        var rows = FindRows(lines);
+        var columns = FindColumns(lines);
+
+        var total = 0L;
         
         for (var i = 0; i < galaxies.Length; i++)
-            for (var j = i + 1; j < galaxies.Length; j++)
-                distances.Add(CalculateDistance(galaxies[i], galaxies[j]));
+        for (var j = i + 1; j < galaxies.Length; j++)
+        {
+            var start = galaxies[i];
+            var finish = galaxies[j];
 
-        return distances.Sum();
+            var height = Calculate(start.Row, finish.Row, rows);
+            var width = Calculate(start.Column, finish.Column, columns);
+
+            total += height + width;
+        }
+
+        return total;
     }
 
-    private int CalculateDistance(Galaxy start, Galaxy finish)
+    private static int Calculate(int a, int b, int[] blanks)
     {
-        var height = Math.Max(start.Row, finish.Row) - Math.Min(start.Row, finish.Row);
-        var width = Math.Max(start.Column, finish.Column) - Math.Min(start.Column, finish.Column);
+        var (max, min) = (Math.Max(a, b), Math.Min(a, b));
+        var count = blanks.Count(c => c > min && c < max);
         
-        return height + width;
+        return max - min + count * (1_000_000 - 1);
     }
-    
-    private Galaxy[] FindGalaxies(char[][] grid)
+
+    private static Galaxy[] FindGalaxies(char[][] grid)
     {
         var galaxies = new List<Galaxy>();
         
@@ -47,22 +59,16 @@ internal class Evaluator()
 
         return galaxies.ToArray();
     }
-    
-    private char[][] BuildGrid(string[] lines)
-    {
-        var height = lines.Length;
-        var width = lines[0].Length;
-        
-        var grid = lines.Select(line => line.PadRight(width, '.')).ToArray();
 
-        var rows = Enumerable.Range(0, height).Where(i => grid[i].All(c => c == '.'));
-        grid = grid.SelectMany((line, i) => rows.Contains(i) ? new[] { line, line } : new[] { line }).ToArray();
+    private static int[] FindRows(string[] lines) =>
+        Enumerable.Range(0, lines.Length)
+            .Where(loop => lines[loop].All(c => c == '.'))
+            .ToArray();
 
-        var columns = Enumerable.Range(0, width).Where(j => grid.All(line => line[j] == '.'));
-        grid = grid.Select(line => new string(line.SelectMany((c, j) => columns.Contains(j) ? new[] { c, c } : new[] { c }).ToArray())).ToArray();
-
-        return grid.Select(line => line.ToCharArray()).ToArray();
-    }
+    private static int[] FindColumns(string[] lines) =>
+        Enumerable.Range(0, lines[0].Length)
+            .Where(loop => lines.All(line => line[loop] == '.'))
+            .ToArray();
 }
 
 internal record Galaxy(int Row, int Column);
