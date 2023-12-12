@@ -20,13 +20,17 @@ internal class Solution
 
         Console.WriteLine($"Total: {total}");
     }
+
+    private const int FoldingFactor = 5;
     
     private long CalculateArrangements(string line)
     {
-        var (data, numbers) = Parse(line);
+        var split = line.Split(" ");
+        var data = Regex.Replace(split[0], @"[\.]+", ".");
+        var numbers = split[1].Split(",").Select(int.Parse).ToArray();
 
-        var input = string.Join("?", Enumerable.Repeat(data, 5));
-        var counts = Enumerable.Repeat(numbers, 5).SelectMany(n => n).ToArray();
+        var input = string.Join("?", Enumerable.Repeat(data, FoldingFactor));
+        var counts = Enumerable.Repeat(numbers, FoldingFactor).SelectMany(n => n).ToArray();
 
         return Calculate(input, counts);
     }
@@ -78,13 +82,5 @@ internal class Solution
         var skip = input.Length == counts[0] ? counts[0] : counts[0] + 1;
 
         return Calculate(input[skip..], counts[1..]);
-    }
-
-    private static (string, int[]) Parse(string line)
-    {
-        var split = line.Split(" ");
-        var counts = split[1].Split(",").Select(int.Parse).ToArray();
-        
-        return (Regex.Replace(split[0], @"[\.]+", "."), counts);
     }
 }
