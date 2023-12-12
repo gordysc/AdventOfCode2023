@@ -12,14 +12,11 @@ Console.WriteLine($"Total Time: {sw.Elapsed.TotalMilliseconds}ms");
 internal class Solution
 {
     private static readonly string[] Input = File.ReadAllLines(@"../../../Data/Input.txt");
-    private readonly Dictionary<string, long> cache = new();
+    private readonly Dictionary<string, long> _cache = new();
 
     public void Solve()
     {
-        var total = 0L;
-
-        for (var loop = 0; loop < Input.Length; loop++)
-            total += CalculateArrangements(Input[loop]);
+        var total = Input.Aggregate(0L, (acc, line) => CalculateArrangements(line) + acc);
 
         Console.WriteLine($"Total: {total}");
     }
@@ -31,27 +28,19 @@ internal class Solution
         var input = string.Join("?", Enumerable.Repeat(data, 5));
         var counts = Enumerable.Repeat(numbers, 5).SelectMany(n => n).ToArray();
 
-        var result = Calculate(input, counts);
-
-        // Console.WriteLine(string.Join("", Enumerable.Repeat("-", 20).ToArray()));
-        // Console.WriteLine($"Input: {input}");
-        // Console.WriteLine($"Counts: {string.Join(",", counts)}");
-        // Console.WriteLine($"Result: {result}");
-        // Console.WriteLine(string.Join("", Enumerable.Repeat("-", 20).ToArray()));
-
-        return result;
+        return Calculate(input, counts);
     }
 
     private long Calculate(string input, int[] counts)
     {
         var key = $"[{input}|{string.Join(":", counts)}";
 
-        if (cache.TryGetValue(key, out var result))
+        if (_cache.TryGetValue(key, out var result))
             return result;
 
         result = CalculateInternal(input, counts);
 
-        cache.Add(key, result);
+        _cache.Add(key, result);
 
         return result;
     }
