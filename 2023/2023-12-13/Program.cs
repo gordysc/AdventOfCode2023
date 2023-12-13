@@ -20,31 +20,46 @@ internal class Solution
         Console.WriteLine($"Total: {total}");
     }
 
-    private static int FindReflection(byte[][] grid)
+    private static int FindReflection(string[] rows)
     {
-        var height = grid.Length;
-        
-        if (height % 2 == 0 && grid[height / 2].SequenceEqual()) {} 
+        var index = FindIndex(rows);
 
-        return 0;
+        if (index > -1) return index * 100;
+
+        var columns = Enumerable.Range(0, rows[0].Length)
+            .Select(c => string.Join("", rows.Select(row => row[c])))
+            .ToArray();
+
+        return FindIndex(columns);
     }
 
-    private static bool IsReflection(byte[][] grid)
+    private static int FindIndex(string[] rows)
     {
-        var height = grid.Length;
-        
-        if (height % 2 == 0)
-        {
-            var middle = height / 2;
-            
-        }
-    }
-        
+        for (var loop = 1; loop < rows.Length; loop++)
+            if (IsReflection(rows, loop))
+                return loop;
 
-    private static List<byte[][]> CreateGrids()
+        return -1;
+    }
+
+    private static bool IsReflection(string[] rows, int index)
     {
-        var grids = new List<byte[][]>();
-        var rows = new List<byte[]>();
+        var left = rows[..index];
+        var right = rows[index..];
+
+        if (left.Length > right.Length)
+            return left.Reverse().Take(right.Length).SequenceEqual(right);
+
+        if (right.Length > left.Length)
+            return right.Take(left.Length).Reverse().SequenceEqual(left);
+
+        return left.Reverse().SequenceEqual(right);
+    }
+
+    private static List<string[]> CreateGrids()
+    {
+        var grids = new List<string[]>();
+        var rows = new List<string>();
 
         foreach (var line in Lines)
         {
@@ -55,8 +70,10 @@ internal class Solution
                 continue;
             }
 
-            rows.Add(line.Select(c => c == '#' ? (byte)1 : (byte)0).ToArray());
+            rows.Add(line);
         }
+
+        grids.Add(rows.ToArray());
 
         return grids;
     }
