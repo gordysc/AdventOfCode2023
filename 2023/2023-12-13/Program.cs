@@ -48,13 +48,19 @@ internal class Solution
         var right = rows[index..];
 
         if (left.Length > right.Length)
-            return left.Reverse().Take(right.Length).SequenceEqual(right);
+            return IsSmudged(left.Reverse().Take(right.Length).ToArray(), right);
 
         if (right.Length > left.Length)
-            return right.Take(left.Length).Reverse().SequenceEqual(left);
+            return IsSmudged(right.Take(left.Length).Reverse().ToArray(), left);
 
-        return left.Reverse().SequenceEqual(right);
+        return IsSmudged(left.Reverse().ToArray(), right);
     }
+
+    private static bool IsSmudged(string[] left, string[] right) =>
+        left.Select((l, idx) => Smudges(l, right[idx])).Sum() == 1;
+
+    private static int Smudges(string left, string right) =>
+        Enumerable.Range(0, left.Length).Count(idx => left[idx] != right[idx]);
 
     private static List<string[]> CreateGrids()
     {
