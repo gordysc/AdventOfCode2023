@@ -1,5 +1,4 @@
-﻿using System.Text;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 
 var sw = new System.Diagnostics.Stopwatch();
 var solution = new Solution();
@@ -12,23 +11,42 @@ Console.WriteLine($"Total Time: {sw.Elapsed.TotalMilliseconds}ms");
 
 internal class Solution
 {
-    private static readonly string[] Lines = File.ReadAllLines(@"../../../Data/Example.txt");
-    private static long Rotations = 1_000_000_000L;
+    private static readonly string[] Lines = File.ReadAllLines(@"../../../Data/Input.txt");
+    private static readonly long Rotations = 1_000_000_000L;
 
     public void Solve()
     {
-        var tilted = (string[]) Lines.Clone();
+        var cycled = CycleMany(Lines, Rotations);
+        var grid = cycled.Select(s => s.ToCharArray()).ToArray();
 
-        for (var loop = 0; loop < 3; loop++)
-            tilted = Cycle(tilted);
-        
-        foreach (var line in tilted)
-            Console.WriteLine(line);
-        // var rotated = RotateRight(grid).Select(row => new string(row)).ToArray();
-        // var result = CalculateLoad(rotated);
-        //
-        // Console.WriteLine();
-        // Console.WriteLine($"Result: {result}");
+        var rotated = RotateRight(grid).Select(row => new string(row)).ToArray();
+        var result = CalculateLoad(rotated);
+
+        Console.WriteLine($"Result: {result}");
+    }
+
+    private static string[] CycleMany(string[] lines, long rotations)
+    {
+        var data = (string[])lines.Clone();
+        var cursor = string.Join("|", lines);
+        var cache = new List<string>();
+
+        while (!cache.Contains(cursor))
+        {
+            cache.Add(cursor);
+
+            data = Cycle(data);
+            cursor = string.Join("|", data);
+        }
+
+        var remaining = rotations - cache.Count;
+        var index = cache.IndexOf(cursor);
+        var cycle = cache.Slice(index, cache.Count - index);
+        var spot = (int) remaining % cycle.Count;
+
+        var element = cycle.ElementAt(spot);
+
+        return element.Split("|");
     }
 
     private static string[] Cycle(string[] lines) =>
@@ -73,11 +91,8 @@ internal class Solution
             .Select(x => grid.Select(row => row[grid.Length - x - 1]).ToArray())
             .ToArray();
 
-    private static char[][] FlipHorizontal(char[][] grid) =>
-        grid.Reverse().ToArray();
-
     private static int CalculateLoad(string[] lines) =>
-        lines.Select(Tilt).Select(CalculateRowLoad).Sum();
+        lines.Select(CalculateRowLoad).Sum();
 
     private static int CalculateRowLoad(string line) =>
         Regex.Matches(line, "[O]").Select(m => m.Index + 1).ToArray().Sum();
