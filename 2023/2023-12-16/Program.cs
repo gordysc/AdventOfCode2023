@@ -14,13 +14,26 @@ internal class Solution
     
     private static readonly int Height = Grid.Length;
     private static readonly int Width = Grid[0].Length;
+
     public void Solve()
+    {
+        var top = Enumerable.Range(0, Width).Select(x => ((x, 0), 'D')).ToArray();
+        var bottom = Enumerable.Range(0, Width).Select(x => ((x, Height - 1), 'U')).ToArray();
+        var left = Enumerable.Range(0, Height).Select(y => ((0, y), 'R')).ToArray();
+        var right = Enumerable.Range(0, Height).Select(y => ((Width - 1, y), 'L')).ToArray();
+        
+        var vectors = top.Concat(bottom).Concat(left).Concat(right).ToArray();
+        var answer = vectors.Select(FindEnergizedNodes).Max();
+        
+        Console.WriteLine(answer);
+    }
+    private int FindEnergizedNodes(((int, int), char) start)
     {
         var queue = new Queue<((int, int), char)>();
         var visited = new HashSet<(int, int)>();
         var energized = new HashSet<((int, int), char)>();
 
-        queue.Enqueue(((0, 0), 'R'));
+        queue.Enqueue(start);
 
         while (queue.Count > 0)
         {
@@ -35,8 +48,8 @@ internal class Solution
             foreach (var beam in Move(x, y, direction))
                 queue.Enqueue(beam);
         }
-        
-        Console.WriteLine($"Answer: {visited.Count}");
+
+        return visited.Count;
     }
     
     private static IList<((int, int), char)> Move(int x, int y, char direction) =>
