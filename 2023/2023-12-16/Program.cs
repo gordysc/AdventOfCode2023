@@ -23,11 +23,11 @@ internal class Solution
         var right = Enumerable.Range(0, Height).Select(y => ((Width - 1, y), 'L')).ToArray();
         
         var vectors = top.Concat(bottom).Concat(left).Concat(right).ToArray();
-        var answer = vectors.Select(FindEnergizedNodes).Max();
+        var answer = vectors.AsParallel().Select(FindEnergy).Max();
         
         Console.WriteLine(answer);
     }
-    private int FindEnergizedNodes(((int, int), char) start)
+    private int FindEnergy(((int, int), char) start)
     {
         var queue = new Queue<((int, int), char)>();
         var visited = new HashSet<(int, int)>();
@@ -52,7 +52,7 @@ internal class Solution
         return visited.Count;
     }
     
-    private static IList<((int, int), char)> Move(int x, int y, char direction) =>
+    private static IEnumerable<((int, int), char)> Move(int x, int y, char direction) =>
         direction switch
         {
             'R' => Right(x, y),
@@ -69,7 +69,7 @@ internal class Solution
             '|' => [((x, y - 1), 'U'), ((x, y + 1), 'D')],
             _ => new List<((int, int), char)> {((x + 1, y), 'R')}
         };
-    
+
     private static IList<((int, int), char)> Left(int x, int y) =>
         Grid[y][x] switch {
             '/' => [((x, y + 1), 'D')],
