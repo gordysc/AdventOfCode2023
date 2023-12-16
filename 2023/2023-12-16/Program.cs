@@ -40,10 +40,9 @@ internal class Solution
             var ((x, y), direction) = queue.Dequeue();
             
             if (IsTerminated(x, y)) continue;
-            if (energized.Contains(((x, y), direction))) continue;
+            if (!energized.Add(((x, y), direction))) continue;
 
             visited.Add((x, y));
-            energized.Add(((x, y), direction));
 
             foreach (var beam in Move(x, y, direction))
                 queue.Enqueue(beam);
@@ -62,7 +61,7 @@ internal class Solution
             _ => throw new Exception("Invalid direction")
         };
 
-    private static IList<((int, int), char)> Right(int x, int y) =>
+    private static IEnumerable<((int, int), char)> Right(int x, int y) =>
         Grid[y][x] switch {
             '/' => [((x, y - 1), 'U')],
             '\\' => [((x, y + 1), 'D')],
@@ -70,7 +69,7 @@ internal class Solution
             _ => new List<((int, int), char)> {((x + 1, y), 'R')}
         };
 
-    private static IList<((int, int), char)> Left(int x, int y) =>
+    private static IEnumerable<((int, int), char)> Left(int x, int y) =>
         Grid[y][x] switch {
             '/' => [((x, y + 1), 'D')],
             '\\' => [((x, y - 1), 'U')],
@@ -78,7 +77,7 @@ internal class Solution
             _ => new List<((int, int), char)> {((x - 1, y), 'L')}
         };
     
-    private static IList<((int, int), char)> Up(int x, int y) =>
+    private static IEnumerable<((int, int), char)> Up(int x, int y) =>
         Grid[y][x] switch {
             '/' => [((x + 1, y), 'R')],
             '\\' => [((x - 1, y), 'L')],
@@ -86,7 +85,7 @@ internal class Solution
             _ => new List<((int, int), char)> {((x, y - 1), 'U')}
         };
     
-    private static IList<((int, int), char)> Down(int x, int y) =>
+    private static IEnumerable<((int, int), char)> Down(int x, int y) =>
         Grid[y][x] switch {
             '/' => [((x - 1, y), 'L')],
             '\\' => [((x + 1, y), 'R')],
