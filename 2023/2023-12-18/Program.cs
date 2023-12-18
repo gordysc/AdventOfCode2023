@@ -1,4 +1,6 @@
-﻿// var input = File.ReadAllLines(@"../../../Data/Example.txt");
+﻿using System.Text.RegularExpressions;
+
+// var input = File.ReadAllLines(@"../../../Data/Example.txt");
 var input = File.ReadAllLines(@"../../../Data/Input.txt");
 var sw = new System.Diagnostics.Stopwatch();
 var solution = new Solution();
@@ -23,19 +25,26 @@ internal class Solution
         Console.WriteLine($"Answer: {answer}");
     }
 
-    private static (int, int)[] BuildVertices(IEnumerable<string> input)
+    private static char[] Directions = ['R', 'D', 'L', 'U'];
+
+    private static (long, long)[] BuildVertices(IEnumerable<string> input)
     {
-        int x = 0, y = 0;
+        long x = 0, y = 0;
         
-        List<(int, int)> coordinates = [(x, y)];
+        List<(long, long)> coordinates = [(x, y)];
 
         foreach (var line in input)
         {
-            var parts = line.Split(" ");
-            var delta = int.Parse(parts[1]);
+            var last = line.Split(" ").Last();
+            var sanitized = Regex.Replace(last, @"[#()]", "");
 
-            x += parts[0] == "R" ? delta : parts[0] == "L" ? -1 * delta : 0;
-            y += parts[0] == "U" ? delta : parts[0] == "D" ? -1 * delta : 0;
+            var hex = sanitized[..^1];
+            var direction = Directions[int.Parse(sanitized.Last().ToString())];
+
+            var delta = Convert.ToInt64(hex, 16);
+
+            x += direction == 'R' ? delta : direction == 'L' ? -1 * delta : 0;
+            y += direction == 'U' ? delta : direction == 'D' ? -1 * delta : 0;
             
             coordinates.Add((x, y));
         }
@@ -43,18 +52,18 @@ internal class Solution
         return coordinates.ToArray();
     }
 
-    private static int CalculatePerimeter(IReadOnlyList<(int, int)> vertices) =>
+    private static long CalculatePerimeter(IReadOnlyList<(long, long)> vertices) =>
         Enumerable.Range(1, vertices.Count - 1)
-            .Aggregate(0, (acc, loop) =>
+            .Aggregate(0L, (acc, loop) =>
                 acc +
                 Math.Abs(vertices[loop - 1].Item1 - vertices[loop].Item1) +
                 Math.Abs(vertices[loop - 1].Item2 - vertices[loop].Item2)
             );
     
-    private static int CalculateArea(IReadOnlyList<(int, int)> vertices) {
+    private static long CalculateArea(IReadOnlyList<(long, long)> vertices) {
         var mod = vertices.Count;
 
-        var area = 0;
+        long area = 0;
 
         for (var loop = 0; loop < vertices.Count; loop++) {
             var (x1, y1) = vertices[loop];
