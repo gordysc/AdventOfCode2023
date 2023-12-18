@@ -18,7 +18,8 @@ internal class Solution()
         new Modifier('L', -1, 0),
     ];
 
-    private static readonly int MaxRepeatFactor = 3;
+    private static readonly int MaxRepeatFactor = 10;
+    private static readonly int MinimumMoveFactor = 4;
     private static readonly char Idle = 'X';
 
     public void Solve(string[] input)
@@ -48,6 +49,11 @@ internal class Solution()
             {
                 // Cannot go in reverse
                 if (path.IsReverseDirection(direction))
+                    continue;
+
+                var isTurn = direction != path.Direction && path.Direction != Idle;
+
+                if (isTurn && path.Counter < MinimumMoveFactor)
                     continue;
                 
                 var counter = direction == path.Direction ? path.Counter + 1 : 1;
