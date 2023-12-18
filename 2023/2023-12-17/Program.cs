@@ -1,4 +1,6 @@
-﻿var input = File.ReadAllLines(@"../../../Data/Input.txt");
+﻿using System.Numerics;
+
+var input = File.ReadAllLines(@"../../../Data/Input.txt");
 var sw = new System.Diagnostics.Stopwatch();
 var solution = new Solution();
 
@@ -25,13 +27,12 @@ internal class Solution()
     public void Solve(string[] input)
     {
         var grid = CreateGrid(input);
-        var cache = new Dictionary<string, int>();
-        var queue = new Queue<Path>();
-        
+        var cache = new Dictionary<(Complex, char, int), int>();
+        var queue = new PriorityQueue<Path, int>();
         var height = grid.Length;
         var width = grid[0].Length;
         
-        queue.Enqueue(new Path(0, 0, 0, Idle, 0));
+        queue.Enqueue(new Path(0, 0, 0, Idle, 0), 0);
 
         while (queue.Count > 0)
         {
@@ -71,15 +72,15 @@ internal class Solution()
                 
                 var total = path.Total + grid[row][column];
                 
-                queue.Enqueue(new Path(total, row, column, direction, counter));
+                queue.Enqueue(new Path(total, row, column, direction, counter), total);
             }   
         }
 
         var answer = cache.Keys.Select(key =>
         {
-            var segments = key.Split(":");
-            var row = int.Parse(segments[0]);
-            var column = int.Parse(segments[1]);
+            var (coordinates, _, _) = key;
+            var row = coordinates.Real;
+            var column = coordinates.Imaginary;
 
             if (row != height - 1) return int.MaxValue;
             if (column != width - 1) return int.MaxValue;
@@ -96,7 +97,7 @@ internal class Solution()
 
 internal record Path(int Total, int Row, int Column, char Direction, int Counter)
 {
-    public string Key => $"{Row}:{Column}:{Direction}:{Counter}";
+    public (Complex, char, int) Key => (new Complex(Row, Column), Direction, Counter); 
     public bool IsReverseDirection(char direction) => direction switch
     {
         'R' => Direction == 'L',
