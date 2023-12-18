@@ -16,16 +16,16 @@ internal class Solution
     public void Solve(IEnumerable<string> input)
     {
         var vertices = BuildVertices(input);
-        var perimeter = CalculatePerimeter(vertices);
         var area = CalculateArea(vertices);
-        var interior = area - perimeter / 2 + 1;
+        var perimeter = CalculatePerimeter(vertices);
 
+        var interior = area - perimeter / 2 + 1;
         var answer = perimeter + interior;
         
         Console.WriteLine($"Answer: {answer}");
     }
 
-    private static char[] Directions = ['R', 'D', 'L', 'U'];
+    private static readonly char[] Directions = ['R', 'D', 'L', 'U'];
 
     private static (long, long)[] BuildVertices(IEnumerable<string> input)
     {
@@ -60,18 +60,17 @@ internal class Solution
                 Math.Abs(vertices[loop - 1].Item2 - vertices[loop].Item2)
             );
     
-    private static long CalculateArea(IReadOnlyList<(long, long)> vertices) {
-        var mod = vertices.Count;
-
-        long area = 0;
+    private static long CalculateArea(IReadOnlyList<(long, long)> vertices)
+    {
+        var total = 0L;
 
         for (var loop = 0; loop < vertices.Count; loop++) {
             var (x1, y1) = vertices[loop];
-            var (x2, y2) = vertices[(loop + 1) % mod];
+            var (x2, y2) = vertices[(loop + 1) % vertices.Count];
 
-            area += x1 * y2 - y1 * x2;
+            total += x1 * y2 - y1 * x2;
         }
 
-        return Math.Abs(area / 2);
+        return Math.Abs(total / 2);
     }
 }
