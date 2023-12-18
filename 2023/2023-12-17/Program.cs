@@ -27,16 +27,23 @@ internal class Solution()
     public void Solve(string[] input)
     {
         var grid = CreateGrid(input);
-        var cache = new Dictionary<(Complex, char, int), int>();
+        var cache = new Dictionary<((int, int), char, int), int>();
         var queue = new PriorityQueue<Path, int>();
         var height = grid.Length;
         var width = grid[0].Length;
+        var answer = int.MaxValue;
         
         queue.Enqueue(new Path(0, 0, 0, Idle, 0), 0);
 
         while (queue.Count > 0)
         {
             var path = queue.Dequeue();
+            
+            if (path.Row == height - 1 && path.Column == width - 1)
+            {
+                answer = Math.Min(answer, path.Total);
+                continue;
+            }
 
             // See if we've been here before w/ the same direction & counter
             // If we have check if we've found a faster route, if so bail.
@@ -52,9 +59,9 @@ internal class Solution()
                 if (path.IsReverseDirection(direction))
                     continue;
 
-                var isTurn = direction != path.Direction && path.Direction != Idle;
+                var isTurn = direction != path.Direction;
 
-                if (isTurn && path.Counter < MinimumMoveFactor)
+                if (path.Direction != Idle && isTurn && path.Counter < MinimumMoveFactor)
                     continue;
                 
                 var counter = direction == path.Direction ? path.Counter + 1 : 1;
@@ -76,18 +83,6 @@ internal class Solution()
             }   
         }
 
-        var answer = cache.Keys.Select(key =>
-        {
-            var (coordinates, _, _) = key;
-            var row = coordinates.Real;
-            var column = coordinates.Imaginary;
-
-            if (row != height - 1) return int.MaxValue;
-            if (column != width - 1) return int.MaxValue;
-
-            return cache[key];
-        }).Min();
-
         Console.WriteLine($"Answer: {answer}");
     }
 
@@ -97,7 +92,7 @@ internal class Solution()
 
 internal record Path(int Total, int Row, int Column, char Direction, int Counter)
 {
-    public (Complex, char, int) Key => (new Complex(Row, Column), Direction, Counter); 
+    public ((int, int), char, int) Key => ((Row, Column), Direction, Counter); 
     public bool IsReverseDirection(char direction) => direction switch
     {
         'R' => Direction == 'L',
