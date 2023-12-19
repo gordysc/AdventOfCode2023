@@ -27,7 +27,8 @@ internal class Solution
         var results = Evaluate(tracker, workflows, "in");
 
         var answer = results.Aggregate(0L, (acc, r) => acc + ComputeCombinations(r));
-        
+        // Mine: 44178028428000
+        // Theirs: 167409079868000
         Console.WriteLine($"Answer: {answer}");
     }
 
@@ -46,55 +47,73 @@ internal class Solution
 
     private static Dictionary<string, (int, int)>[] Evaluate(Dictionary<string, (int, int)> previous, Dictionary<string, string> workflows, string label)
     {
+        var none = Array.Empty<Dictionary<string, (int, int)>>();
+        var tracker = new Dictionary<string, (int, int)>(previous);
+        if (label == "A") return [tracker];
+        if (label == "R") return none;
+
+        if (label == "rfg")
+            Console.WriteLine("We got here...");
+
         var workflow = workflows[label];
         var operations = workflow.Split(",");
-        var tracker = new Dictionary<string, (int, int)>(previous);
-        var none = Array.Empty<Dictionary<string, (int, int)>>();
+        var results = new List<Dictionary<string, (int, int)>>();
 
-        return operations.SelectMany(operation =>
+        foreach (var operation in operations)
         {
             // See if we reached the end
-            if (operation == "A") return [previous];
+            if (operation == "A")
+            {
+                results.Add(tracker);
+                return results.ToArray();
+            }
+
             if (operation == "R") return none;
 
             var parts = operation.Split(new[] { ">", "<", ":" }, StringSplitOptions.RemoveEmptyEntries);
 
-            if (operation.Contains('>') || operation.Contains('<'))
+            if (operation.Contains('>'))
             {
-                var op = operation.Contains('>') ? "gt" : "lt";
-
                 var key = parts[0];
                 var (min, max) = tracker[key];
-                // 98548139872000
-                // 167409079868000
+
                 var value = int.Parse(parts[1]);
-                // If we require a value greater than our letter's max value abort
-                if (op == "gt" && value > max) return none;
-
-                // Raise the minimum range value (if applicable)
-                if (op == "gt") tracker[key] = (Math.Max(min, value + 1), max);
-
-                // If we require a value less than our letter's min value abort
-                if (op == "lt" && value < min) return none;
-
-                // Lower the max range value (if applicable)
-                if (op == "lt") tracker[key] = (min, Math.Min(max, value - 1));
-
-                // If our min value > max value this is an invalid path, abort
-                if (tracker[key].Item1 > tracker[key].Item2) return none;
-
                 var destination = parts[2];
 
-                // Check if we are done...
-                if (destination == "A") return [tracker];
-                if (destination == "R") return none;
+                if (value >= max) return none;
 
-                // Get all the possible outcomes from the next jump
-                return Evaluate(tracker, workflows, destination);
+                var satisfied = new Dictionary<string, (int, int)>(tracker);
+                satisfied[key] = (value + 1, max);
+
+                results.AddRange(Evaluate(satisfied, workflows, destination));
+
+                tracker[key] = (min, value);
+                continue;
             }
 
-            return Evaluate(tracker, workflows, operation);
-        }).Where(r => r.Keys.Count > 0).ToArray();
+            if (operation.Contains('<'))
+            {
+                var key = parts[0];
+                var (min, max) = tracker[key];
+
+                var value = int.Parse(parts[1]);
+                var destination = parts[2];
+
+                if (min >= value) return none;
+
+                var satisfied = new Dictionary<string, (int, int)>(tracker);
+                satisfied[key] = (min, value - 1);
+
+                results.AddRange(Evaluate(satisfied, workflows, destination));
+
+                tracker[key] = (value, max);
+                continue;
+            }
+
+            results.AddRange(Evaluate(tracker, workflows, operation));
+        }
+
+        return results.ToArray();
     }
 
     private static Dictionary<string, string> ParseWorkflows(IEnumerable<string> lines) =>
