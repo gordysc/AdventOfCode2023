@@ -1,7 +1,7 @@
 ﻿using System.Text.RegularExpressions;
 
-var input = File.ReadAllText(@"../../../Data/Example.txt");
-// var input = File.ReadAllLines(@"../../../Data/Input.txt");
+// var input = File.ReadAllText(@"../../../Data/Example.txt");
+var input = File.ReadAllText(@"../../../Data/Input.txt");
 var sw = new System.Diagnostics.Stopwatch();
 var solution = new Solution();
 
@@ -27,8 +27,7 @@ internal class Solution
         var results = Evaluate(tracker, workflows, "in");
 
         var answer = results.Aggregate(0L, (acc, r) => acc + ComputeCombinations(r));
-        // Mine: 44178028428000
-        // Theirs: 167409079868000
+
         Console.WriteLine($"Answer: {answer}");
     }
 
@@ -49,11 +48,9 @@ internal class Solution
     {
         var none = Array.Empty<Dictionary<string, (int, int)>>();
         var tracker = new Dictionary<string, (int, int)>(previous);
+        
         if (label == "A") return [tracker];
         if (label == "R") return none;
-
-        if (label == "rfg")
-            Console.WriteLine("We got here...");
 
         var workflow = workflows[label];
         var operations = workflow.Split(",");
@@ -68,7 +65,8 @@ internal class Solution
                 return results.ToArray();
             }
 
-            if (operation == "R") return none;
+            if (operation == "R") 
+                return results.ToArray();
 
             var parts = operation.Split(new[] { ">", "<", ":" }, StringSplitOptions.RemoveEmptyEntries);
 
