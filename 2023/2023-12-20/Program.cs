@@ -29,15 +29,10 @@ internal class Solution
 
         var network = new Network(broadcaster, handlers);
 
-        var (low, high) = Enumerable.Repeat(0, 1000).Select(_ => network.PressButton())
-            .Aggregate((low: 0, high: 0),
-                (acc, kvp) =>
-                    (acc.low + kvp[Pulse.Low], acc.high + kvp[Pulse.High])
-            );
+        while (!network.IsComplete)
+            network.PressButton();
 
-        var answer = low * high;
-
-        Console.WriteLine($"Answer: {answer}");
+        Console.WriteLine($"Answer: {network.TotalPressesRequired}");
     }
 
 

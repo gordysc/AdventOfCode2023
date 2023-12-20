@@ -4,9 +4,9 @@ public class InverterModule(string label, IEnumerable<string> targets) :IPulseMo
 {
     private readonly IDictionary<string, Pulse> _memory = new Dictionary<string, Pulse>();
 
-    public IEnumerable<string> Targets => targets;
-
     public string Label => label;
+    public IEnumerable<string> Targets => targets;
+    public Pulse Signal => IsAllHigh ? Pulse.Low : Pulse.High;
     public void AddSource(string source)
     {
         _memory[source] = Pulse.Low;
@@ -18,7 +18,6 @@ public class InverterModule(string label, IEnumerable<string> targets) :IPulseMo
     }
 
     public IEnumerable<EmittedPulse> Emit() =>
-        targets.Select(s => new EmittedPulse(label, s, EmittedPulse));
-    private Pulse EmittedPulse => IsAllHigh ? Pulse.Low : Pulse.High;
+        targets.Select(s => new EmittedPulse(label, s, Signal));
     private bool IsAllHigh => _memory.Values.All(v => v == Pulse.High);
 }

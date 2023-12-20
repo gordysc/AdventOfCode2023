@@ -5,9 +5,9 @@ public class FlipFlopModule(string label, IEnumerable<string> targets) : IPulseM
     private bool _enabled;
     private Pulse _memory = Pulse.Low;
 
-    public IEnumerable<string> Targets => targets;
-
     public string Label => label;
+    public IEnumerable<string> Targets => targets;
+    public Pulse Signal => _enabled ? Pulse.High : Pulse.Low;
     public void AddSource(string source)
     {
         // Do nothing

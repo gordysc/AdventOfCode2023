@@ -2,9 +2,17 @@ namespace _2023_12_20;
 
 public record Network(Broadcaster Broadcaster, IDictionary<string, IPulseModule> Handlers)
 {
-    public Dictionary<Pulse,  int> PressButton()
+    private static readonly string[] Targets = { "gt","vr","nl","lr" };
+
+    public readonly IDictionary<string, long> _trackers = Targets.ToDictionary(t => t, t => 0L);
+    public bool IsComplete => _trackers.Values.All(v => v > 0);
+    public long TotalPressesRequired => _trackers.Values.Aggregate(-1L, (acc, v) => v < 0L ? v : LCM(acc, v));
+
+    private long _pressed;
+    public void PressButton()
     {
-        var counts = new Dictionary<Pulse, int> { { Pulse.Low, 1 }, { Pulse.High, 0 } };
+        _pressed++;
+
         var emitted = new List<EmittedPulse>();
 
         foreach (var target in Broadcaster.Targets)
@@ -16,19 +24,25 @@ public record Network(Broadcaster Broadcaster, IDictionary<string, IPulseModule>
 
             foreach (var (source, target, pulse) in emitted)
             {
-                counts[pulse]++;
-
                 if (!Handlers.TryGetValue(target, out var handler))
                     continue;
 
                 handler.Receive(source, pulse);
+
+                if (handler.Signal == Pulse.High && _trackers.TryGetValue(target, out var value) && value == 0L)
+                    _trackers[target] = _pressed;
+
+                if (IsComplete)
+                    return;
+
                 queued.AddRange(handler.Emit());
             }
 
             emitted.Clear();
             emitted.AddRange(queued);
         }
-
-        return counts;
     }
+
+    private static long LCM(long a, long b) => a * b / GCD(a, b);
+    private static long GCD(long a, long b) => b == 0 ? a : GCD(b, a % b);
 }

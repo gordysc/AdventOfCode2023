@@ -4,6 +4,8 @@ public interface IPulseModule
 {
     public string Label { get; }
     IEnumerable<string> Targets { get; }
+
+    public Pulse Signal { get; }
     void AddSource(string source);
     void Receive(string source, Pulse pulse);
     IEnumerable<EmittedPulse> Emit();
