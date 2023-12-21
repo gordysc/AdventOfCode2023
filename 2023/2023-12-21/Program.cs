@@ -15,16 +15,39 @@ Console.WriteLine($"Total Time: {sw.Elapsed.TotalMilliseconds}ms");
 
 internal class Solution()
 {
-    private const int StepCount = 64;
+    private const int StepCount = 65 + 131 * 2;
     private static readonly (int, int)[] Modifiers = [(0, -1), (1, 0), (0, 1), (-1, 0)];
     public void Solve(char[][] grid)
     {
+        // The starting point is in the very middle (65, 65)
+        // There are no rocks vertically/horizontally between the starting point and edge.
+        // This means it takes 65 steps to get to the edge of the first grid
+        // If we keep moving straight it'll take us 131 additional steps to get to the far edge of the next grid
+
+        // f(x) = 65 + 131 * x
+        // 65 + 131 * 0 => 3744 positions
+        // 65 + 131 * 1 => 33417 positions
+        // 65 + 131 * 2 = 327 steps => 92680 positions
+        // 65 + 131 * 3 = 458 steps => 181533 positions
+
+        // y = ax^2 + bx + c
+        // https://www.wolframalpha.com/input?i=quadratic+fit+calculator
+        // # of positions = 14795 x^2 + 14878 x + 3744
+
+        // 26501365 steps => (26501365 - 65) / 131 = 202300
+        // 14795 * 202300^2 + 14878 * 202300 + 3744 = 605,492,675,373,144
+    }
+
+    private static int CalculatePositions(char[][] grid, int steps)
+    {
         var start = FindStart(grid);
         var queue = new Queue<(int, int)>();
+        var height = grid.Length;
+        var width = grid[0].Length;
 
         queue.Enqueue(start);
 
-        for (var loop = 0; loop < StepCount; loop++)
+        for (var loop = 0; loop < steps; loop++)
         {
             var positions = new HashSet<(int, int)>();
 
@@ -37,10 +60,10 @@ internal class Solution()
                     var row = oRow + deltaY;
                     var col = oCol + deltaX;
 
-                    if (row < 0 || row >= grid.Length || col < 0 || col >= grid[row].Length)
-                        continue;
+                    var cRow = (height + (oRow + deltaY) % height) % height;
+                    var cCol = (width + (oCol + deltaX) % width) % width;
 
-                    if (grid[row][col] != '#')
+                    if (grid[cRow][cCol] != '#')
                         positions.Add((row, col));
                 }
             }
@@ -49,9 +72,7 @@ internal class Solution()
                 queue.Enqueue(position);
         }
 
-        var answer = queue.Count;
-
-        Console.WriteLine($"Answer: {answer}");
+        return queue.Count;
     }
 
     private static (int, int) FindStart(char[][] grid)
