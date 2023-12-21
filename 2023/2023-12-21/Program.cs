@@ -15,7 +15,8 @@ Console.WriteLine($"Total Time: {sw.Elapsed.TotalMilliseconds}ms");
 
 internal class Solution()
 {
-    private const int StepCount = 65 + 131 * 2;
+    private const long StepCount = 26_501_365;
+    private const long GridLength = 131L;
     private static readonly (int, int)[] Modifiers = [(0, -1), (1, 0), (0, 1), (-1, 0)];
     public void Solve(char[][] grid)
     {
@@ -36,9 +37,29 @@ internal class Solution()
 
         // 26501365 steps => (26501365 - 65) / 131 = 202300
         // 14795 * 202300^2 + 14878 * 202300 + 3744 = 605,492,675,373,144
+
+        // y0 = ax0^2 + bx0 + c
+        var zero = CalculatePositions(grid, 65 + 131 * 0);
+        // y1 = ax1^2 + bx1 + c
+        var one = CalculatePositions(grid, 65 + 131 * 1);
+        // y2 = ax2^2 + bx2 + c
+        var two = CalculatePositions(grid, 65 + 131 * 2);
+
+        // y0/2 - y1 + y2/2
+        var a = zero / 2 - one + two / 2;
+        // -3y0/2 + 2y1 - y2/2
+        var b = -3 * zero / 2 + 2 * one - two / 2;
+        // y0
+        var c = zero;
+
+        var x = (StepCount - 65) / GridLength;
+
+        var answer = a * x * x + b * x + c;
+
+        Console.WriteLine($"Answer: {answer}");
     }
 
-    private static int CalculatePositions(char[][] grid, int steps)
+    private static long CalculatePositions(char[][] grid, int steps)
     {
         var start = FindStart(grid);
         var queue = new Queue<(int, int)>();
