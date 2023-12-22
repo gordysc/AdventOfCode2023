@@ -14,39 +14,39 @@ Console.WriteLine($"Total Time: {sw.Elapsed.TotalMilliseconds}ms");
 
 internal class Solution()
 {
+    private readonly IDictionary<Brick, IEnumerable<Brick>> above = new Dictionary<Brick, IEnumerable<Brick>>();
+    private readonly IDictionary<Brick, IEnumerable<Brick>> below = new Dictionary<Brick, IEnumerable<Brick>>();
 
     public void Solve(IEnumerable<string> input)
     {
         var bricks = CreateBricks(input).OrderBy(b => b.Bottom);
         var rested = new List<Brick>();
-        var counts = new Dictionary<Brick, int>();
 
         foreach (var brick in bricks)
             rested.Add(ExecuteGravity(rested, brick));
 
         foreach (var brick in rested)
-            counts[brick] = rested.Where(r => r.Top == brick.Bottom - 1)
-                .Count(r => r.Overlaps(brick));
-
-        var disintegrate = new HashSet<Brick>();
+            above[brick] = rested.Where(r => r.Bottom - 1 == brick.Top)
+                .Where(r => r.Overlaps(brick));
 
         foreach (var brick in rested)
-        {
-            var above = rested.Where(r => brick.Top + 1 == r.Bottom)
-                .Where(r => brick.Overlaps(r));
+            below[brick] = rested.Where(r => r.Top + 1 == brick.Bottom)
+                .Where(r => r.Overlaps(brick));
 
-            // Check if there are no bricks above it
-            if (above.Count() == 0)
-                disintegrate.Add(brick);
+        var answer = rested.AsParallel().Select(b => FindDisintegratedBricks([b])).Sum();
 
-            // Check if all the bricks above it have at 2 bricks below them
-            else if (above.All(a => counts[a] > 1))
-                disintegrate.Add(brick);
-        }
-
-        var answer = disintegrate.Count;
-        
         Console.WriteLine($"Answer: {answer}");
+    }
+
+    private int FindDisintegratedBricks(HashSet<Brick> removed)
+    {
+        var candidates = removed.SelectMany(r => above[r]).ToHashSet();
+        var disintegrated = candidates.Where(c => !removed.Contains(c) && below[c].All(removed.Contains)).ToHashSet();
+
+        if (disintegrated.Count == 0)
+            return removed.Count - 1;
+
+        return FindDisintegratedBricks(removed.Union(disintegrated).ToHashSet());
     }
 
     private static Brick ExecuteGravity(IEnumerable<Brick> rested, Brick brick)
