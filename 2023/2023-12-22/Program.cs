@@ -18,11 +18,42 @@ internal class Solution()
     public void Solve(IEnumerable<string> input)
     {
         var bricks = CreateBricks(input);
-        var sorted = bricks.OrderBy(b => Math.Min(b.C1.Z, b.C2.Z)).ToList();
+        var rested = new List<Brick>();
 
-        var answer = 0;
+        foreach (var brick in bricks)
+            rested.Add(ExecuteGravity(rested, brick));
+
+        var disintegrate = new HashSet<Brick>();
+
+        foreach (var brick in rested)
+        {
+            var above = rested.Where(r => brick.Top + 1 == r.Bottom)
+                .Where(r => brick.Overlaps(r));
+
+            // Check if there are no bricks above it
+            if (above.Count() == 0)
+                disintegrate.Add(brick);
+
+            // Check if all the bricks above it have at 2 bricks below them
+            else if (above.All(a => NumberOfSupportingBricks(rested, a) > 1))
+                disintegrate.Add(brick);
+        }
+
+        var answer = disintegrate.Count;
         
         Console.WriteLine($"Answer: {answer}");
+    }
+
+    private static int NumberOfSupportingBricks(IEnumerable<Brick> bricks, Brick brick) =>
+        bricks.Where(r => r.Top == brick.Bottom - 1)
+            .Count(r => r.Overlaps(brick));
+
+    private static Brick ExecuteGravity(IEnumerable<Brick> rested, Brick brick)
+    {
+        if (brick.IsOnGround || brick.IsRested(rested))
+            return brick;
+
+        return ExecuteGravity(rested, brick.Descend());
     }
 
     private static IEnumerable<Brick> CreateBricks(IEnumerable<string> input) =>
@@ -34,38 +65,33 @@ internal class Solution()
             .Select(l => l.Split(",")
                 .Select(int.Parse).ToArray()).ToArray();
 
-        var c1 = new Coordinates { X = parts[0][0], Y = parts[0][1], Z = parts[0][2] };
-        var c2 = new Coordinates { X = parts[1][0], Y = parts[1][1], Z = parts[1][2] };
+        var c1 = new Coordinates(parts[0][0], parts[0][1], parts[0][2]);
+        var c2 = new Coordinates(parts[1][0], parts[1][1], parts[1][2]);
 
         return new Brick(c1, c2);
     }
 }
 
-internal sealed class Coordinates
+internal record Coordinates(int X, int Y, int Z);
+
+internal record Brick(Coordinates C1, Coordinates C2)
 {
-    public int X { get; set; }
-    public int Y { get; set; }
-    public int Z { get; set; }
-}
+    public int Bottom => Math.Min(C1.Z, C2.Z);
+    public int Top => Math.Max(C1.Z, C2.Z);
+    public bool IsOnGround => Bottom == 1;
 
-internal sealed class Brick(Coordinates c1, Coordinates c2)
-{
-    public Coordinates C1 { get; } = c1;
-    public Coordinates C2 { get; } = c2;
+    public bool IsRested(IEnumerable<Brick> rested) =>
+        rested.Any(r => Bottom - 1 == r.Top && Overlaps(r));
 
-    public void Descend()
-    {
-        C1.Z -= 1;
-        C2.Z -= 1;
-    }
+    public bool Overlaps(Brick brick) =>
+        OverlapsX(brick) && OverlapsY(brick);
 
-    public bool Intersects(Brick brick)
-    {
-        brick.
-        // Check if the highest point of this class is lower than the lowest point of the given brick
-        if (Math.Max(C1.Z, C2.Z) < (Math.Min(brick.C1.Z, brick.C2.Z) - 1))
-            return false;
-    }
-    
-    public bool IsFlat => C1.Z == C2.Z;
+    public Brick Descend() =>
+        new(C1 with { Z = C1.Z - 1 }, C2 with { Z = C2.Z - 1 });
+
+    private bool OverlapsX(Brick brick) =>
+        brick.C1.X <= C2.X && brick.C2.X >= C1.X;
+
+    private bool OverlapsY(Brick brick) =>
+        brick.C1.Y <= C2.Y && brick.C2.Y >= C1.Y;
 }
