@@ -17,11 +17,16 @@ internal class Solution()
 
     public void Solve(IEnumerable<string> input)
     {
-        var bricks = CreateBricks(input);
+        var bricks = CreateBricks(input).OrderBy(b => b.Bottom);
         var rested = new List<Brick>();
+        var counts = new Dictionary<Brick, int>();
 
         foreach (var brick in bricks)
             rested.Add(ExecuteGravity(rested, brick));
+
+        foreach (var brick in rested)
+            counts[brick] = rested.Where(r => r.Top == brick.Bottom - 1)
+                .Count(r => r.Overlaps(brick));
 
         var disintegrate = new HashSet<Brick>();
 
@@ -35,7 +40,7 @@ internal class Solution()
                 disintegrate.Add(brick);
 
             // Check if all the bricks above it have at 2 bricks below them
-            else if (above.All(a => NumberOfSupportingBricks(rested, a) > 1))
+            else if (above.All(a => counts[a] > 1))
                 disintegrate.Add(brick);
         }
 
@@ -43,10 +48,6 @@ internal class Solution()
         
         Console.WriteLine($"Answer: {answer}");
     }
-
-    private static int NumberOfSupportingBricks(IEnumerable<Brick> bricks, Brick brick) =>
-        bricks.Where(r => r.Top == brick.Bottom - 1)
-            .Count(r => r.Overlaps(brick));
 
     private static Brick ExecuteGravity(IEnumerable<Brick> rested, Brick brick)
     {
@@ -76,9 +77,14 @@ internal record Coordinates(int X, int Y, int Z);
 
 internal record Brick(Coordinates C1, Coordinates C2)
 {
-    public int Bottom => Math.Min(C1.Z, C2.Z);
-    public int Top => Math.Max(C1.Z, C2.Z);
     public bool IsOnGround => Bottom == 1;
+
+    private int X1 => Math.Min(C1.X, C2.X);
+    private int X2 => Math.Max(C1.X, C2.X);
+    private int Y1 => Math.Min(C1.Y, C2.Y);
+    private int Y2 => Math.Max(C1.Y, C2.Y);
+    public int Top => Math.Max(C1.Z, C2.Z);
+    public int Bottom => Math.Min(C1.Z, C2.Z);
 
     public bool IsRested(IEnumerable<Brick> rested) =>
         rested.Any(r => Bottom - 1 == r.Top && Overlaps(r));
@@ -90,8 +96,8 @@ internal record Brick(Coordinates C1, Coordinates C2)
         new(C1 with { Z = C1.Z - 1 }, C2 with { Z = C2.Z - 1 });
 
     private bool OverlapsX(Brick brick) =>
-        brick.C1.X <= C2.X && brick.C2.X >= C1.X;
+        brick.X1 <= X2 && brick.X2 >= X1;
 
     private bool OverlapsY(Brick brick) =>
-        brick.C1.Y <= C2.Y && brick.C2.Y >= C1.Y;
+        brick.Y1 <= Y2 && brick.Y2 >= Y1;
 }
