@@ -20,26 +20,7 @@ internal class Solution
     // private static readonly float S2 = 27;
     public void Solve(string[] lines)
     {
-        var vectors = lines.Select(ParseVector).ToArray();
-        var answer = 0;
-        
-        for (var i = 0; i < vectors.Length; i++)
-        for (var j = i + 1; j < vectors.Length; j++)
-        {
-            var v1 = vectors[i];
-            var v2 = vectors[j];
-
-            var x = (v1.B - v2.B) / (v2.M - v1.M);
-            var y = v1.M * x + v1.B;
-
-            if (v1.InPast(x, y) || v2.InPast(x, y))
-                continue;
-
-            if (x is >= S1 and <= S2 && y is >= S1 and <= S2)
-                answer++;
-        }
-        
-        Console.WriteLine($"Answer: {answer}");
+        // Give up on life and use mathematica.
     }
 
     private static Vector ParseVector(string line)
