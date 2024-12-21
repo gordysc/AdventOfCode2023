@@ -41,11 +41,11 @@ var longest = distances.OrderByDescending(x => x.Value).Take(3);
 
 Console.WriteLine("Removing the following edges:");
 
-foreach (var (edge, distance) in longest)
+foreach (var (edge, _) in longest)
 {
     graph.RemoveEdge(edge);
     
-    Console.WriteLine($"{edge.Source} -> {edge.Target}: {distance}");
+    Console.WriteLine($"{edge.Source} <-> {edge.Target}");
 }
 
 var components = new Dictionary<string, int>();
