@@ -1,176 +1,66 @@
-﻿var input = File.ReadAllLines("Data/Input.txt");
+﻿using QuikGraph;
+using QuikGraph.Algorithms;
 
-var graph = new Graph();
+var input = File.ReadAllLines("Data/Input.txt");
+var graph = new UndirectedGraph<string, Edge<string>>();
 
 foreach (var line in input)
 {
     var parts = line.Split(':');
     var node = parts[0];
 
+    graph.AddVertex(node);
+
     var connections = parts[1].Split(' ', StringSplitOptions.RemoveEmptyEntries);
     
     foreach (var connection in connections)
     {
-        graph.AddEdge(node, connection);
+        graph.AddVertex(connection);
+        graph.AddEdge(new Edge<string>(node, connection));
     }
 }
 
-var distances = new List<(Edge Edge, int Distance)>();
-var numberOfEdges = graph.Edges.Count;
+var distances = new Dictionary<Edge<string>, double>();
+var edges = graph.Edges.ToList();
 
-Console.WriteLine($"Found {numberOfEdges} edges");
-
-for (var loop = 0; loop < numberOfEdges; loop++)
+foreach (var edge in edges)
 {
-    if (loop % 100 == 0 && loop > 0)
-        Console.WriteLine($"Processing edge {loop:N0}");
+    graph.RemoveEdge(edge);
     
-    var edge = graph.Edges[loop];
-    var copy = new Graph(graph);
-    
-    copy.RemoveEdge(edge);
-    
-    var distance = copy.FindShortestPath(edge.Node1, edge.Node2);
-    
-    distances.Add((edge, distance));
+    var calculator = graph.ShortestPathsDijkstra(_ => 1, edge.Source);
+
+    if (calculator(edge.Target, out var path))
+        distances[edge] = path.Count();
+    else
+        distances[edge] = double.PositiveInfinity;
+
+    graph.AddEdge(edge);
 }
 
-var longest = distances.OrderByDescending(d => d.Distance).Take(3).ToArray();
+var longest = distances.OrderByDescending(x => x.Value).Take(3);
 
-foreach (var entry in longest)
-    graph.RemoveEdge(entry.Edge);
+Console.WriteLine("Removing the following edges:");
 
-var partitions = graph.GetPartitions();
-
-Console.WriteLine($"Found {partitions.Count} partitions");
-
-var result = partitions.Aggregate(1, (acc, partition) => acc * partition.Count);
-
-internal sealed class Graph
+foreach (var (edge, distance) in longest)
 {
-    private readonly HashSet<string> _nodes = [];
-    private readonly List<Edge> _edges = [];
-    public IReadOnlyList<Edge> Edges => _edges;
-    public IReadOnlySet<string> Nodes => _nodes;
+    graph.RemoveEdge(edge);
     
-    public Graph() { }
-
-    public Graph(Graph original)
-    {
-        _edges = [..original._edges];
-    }
-
-    public List<List<string>> GetPartitions()
-    {
-        var partitions = new List<List<string>>();
-        var visited = new HashSet<string>();
-        
-        foreach (var node in _nodes)
-        {
-            if (visited.Contains(node))
-                continue;
-            
-            var partition = new List<string>();
-            var queue = new Queue<string>();
-            
-            queue.Enqueue(node);
-            
-            while (queue.TryDequeue(out var current))
-            {
-                if (!visited.Add(current))
-                    continue;
-                
-                partition.Add(current);
-                
-                foreach (var edge in _edges.Where(e => e.Contains(current)))
-                {
-                    var nextNode = edge.Node1 == current ? edge.Node2 : edge.Node1;
-                    
-                    if (!visited.Contains(nextNode))
-                        queue.Enqueue(nextNode);
-                }
-            }
-            
-            partitions.Add(partition);
-        }
-
-        return partitions;
-    }
-
-    public int FindShortestPath(string start, string finish)
-    {
-        var fastest = int.MaxValue;
-        var queue = new PriorityQueue<string, int>();
-        var cache = new Dictionary<string, int>();
-        
-        queue.Enqueue(start, 0);
-
-        while (queue.TryDequeue(out var node, out var distance))
-        {
-            if (distance > fastest)
-                continue;
-            
-            if (node == finish)
-            {
-                fastest = Math.Min(fastest, distance);
-                continue;
-            }
-            
-            if (cache.TryGetValue(node, out var cachedDistance) && cachedDistance <= distance)
-                continue;
-            
-            cache[node] = distance;
-            
-            foreach (var edge in _edges.Where(e => e.Contains(node)))
-            {
-                var nextNode = edge.Node1 == node ? edge.Node2 : edge.Node1;
-                var nextDistance = distance + 1;
-                
-                if (nextDistance < fastest)
-                    queue.Enqueue(nextNode, nextDistance);
-            }
-        }
-
-        return fastest;
-    }
-    
-    public void AddEdge(string node1, string node2)
-    {
-        AddEdge(Edge.Create(node1, node2));
-    }
-    
-    private void AddEdge(Edge edge)
-    {
-        _edges.Add(edge);
-        _nodes.Add(edge.Node1);
-        _nodes.Add(edge.Node2);
-    }
-
-    public void RemoveEdge(Edge edge)
-    {
-        _edges.Remove(edge);
-    }
+    Console.WriteLine($"{edge.Source} -> {edge.Target}: {distance}");
 }
 
-    internal readonly record struct Edge(string Node1, string Node2)
-    {
-        public bool Contains(string node) => 
-            Node1 == node || Node2 == node;
-        
-        public override string ToString() => $"{Node1}-{Node2}";
-        
-        public bool Equals(Edge other) => 
-            Node1 == other.Node1 && Node2 == other.Node2;
+var components = new Dictionary<string, int>();
 
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(Node1, Node2);
-        }
+graph.ConnectedComponents(components);
 
-        public static Edge Create(string node1, string node2)
-        {
-            return string.CompareOrdinal(node1, node2) < 0
-                ? new Edge(node1, node2)
-                : new Edge(node2, node1);
-        }
-    }
+var values = components.Values.Distinct();
+var answer = values.Aggregate(1, (acc, value) =>
+{
+    var size = components.Count(x => x.Value == value);
+    
+    Console.WriteLine($"Partition #{value}: {size} nodes");
+    
+    return acc * components.Count(x => x.Value == value);
+});
+
+Console.WriteLine($"Answer: {answer}");
+ 
